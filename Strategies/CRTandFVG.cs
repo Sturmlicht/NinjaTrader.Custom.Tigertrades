@@ -30,9 +30,11 @@ namespace NinjaTrader.NinjaScript.Strategies
 {
 	public class CRTandFVG : Strategy
 	{
-
         //This is one of the Strategy TG_Capital shared with us. Feel free to test and optimize it, or post suggestions in the Chart Fanatics Discord (mention "Tigertrades" so I see it).
-
+        //I am not a profeesional coder nor trader.        
+        //Please use at your own risk. Your money is at risk. 
+        
+        // Version Nov.6, 2025
 
         private Indicators.BarCounter barCounter;
         
@@ -99,11 +101,14 @@ namespace NinjaTrader.NinjaScript.Strategies
             }
 			else if (State == State.Configure)
 			{
+                AddDataSeries(Data.BarsPeriodType.Minute, 1); //1 -> this is only used for BarCounter, Please note, as this is in use, this Strategy won't work for Charts using a smaller Timeframe!
 
-			}
+            }
 			else if (State == State.DataLoaded)
 			{
-                barCounter = BarCounter(Closes[0], true, Brushes.Gray, 14, 50, true);
+                barCounter = BarCounter(Closes[1], true, Brushes.Gray, 14, 50, true); 
+                //you can change this "Closes[1]" to "Closes[0]" to use the Bar Counter with tha values on your primary chart,
+                //this will make using the Strategy available for timeframes lower than 1Min!
                 
                 if (ShowBarCounterOnChart) AddChartIndicator(barCounter);		
 
@@ -159,6 +164,15 @@ namespace NinjaTrader.NinjaScript.Strategies
                 &&  TradingDay
                 );
          
+            //reset bools if outside trading time
+            if(!TradingTime)
+            {
+                criteriaFoundLong = false;
+                criteriaFoundShort = false;
+                EntrySignalLong = false;
+                EntrySignalShort = false;
+            }
+
 
             #region For Longs
 
@@ -188,7 +202,8 @@ namespace NinjaTrader.NinjaScript.Strategies
 
 
 
-            if (criteriaFoundLong && (ConfirmingCandleNotImmediate || CurrentBar == CriteriaFoundCandle+1) //let's check for the Confirming Candle
+            if (TradingTime
+                && criteriaFoundLong && (ConfirmingCandleNotImmediate || CurrentBar == CriteriaFoundCandle+1) //let's check for the Confirming Candle
                 && Close[0] > Open[0] // is bullish
                 && ( Close[0] < ValueToReach  // Closes within range of the bearish candle
                 || ( ConfirmingCandleCanCloseAnywhere && Close[0] > ValueToReach) // or above its open
@@ -275,7 +290,8 @@ namespace NinjaTrader.NinjaScript.Strategies
 
 
 
-            if (criteriaFoundShort && (ConfirmingCandleNotImmediate || CurrentBar == CriteriaFoundCandle+1) //let's check for the Confirming Candle
+            if (TradingTime
+                && criteriaFoundShort && (ConfirmingCandleNotImmediate || CurrentBar == CriteriaFoundCandle+1) //let's check for the Confirming Candle
                 && Close[0] < Open[0] // is bearish
                 && (Close[0] > ValueToReach // Closes within range of the bullish candle
                 || (ConfirmingCandleCanCloseAnywhere && Close[0] < ValueToReach) //or  below its open
@@ -411,57 +427,57 @@ namespace NinjaTrader.NinjaScript.Strategies
 
         // Trading Times Settings
         [NinjaScriptProperty]
-        [Display(Name = "Show Bar Counter on Chart", Description = "Show Bar Counter Indicator on Chart", Order = 1, GroupName = "Trading Times - Change accordingly! Use Bar Counter Indicator")]
+        [Display(Name = "Show Bar Counter on Chart", Description = "Show Bar Counter Indicator on Chart", Order = 1, GroupName = "Trading Times - Uses 1 Minute Chart Bars! Use Bar Counter Indicator")]
         public bool ShowBarCounterOnChart { get; set; } = false;
 
         [NinjaScriptProperty]
-        [Display(Name = "US", Description = "Check if you want to check/trade this Session", Order = 2, GroupName = "Trading Times - Change accordingly! Use Bar Counter Indicator")]
+        [Display(Name = "US", Description = "Check if you want to check/trade this Session", Order = 2, GroupName = "Trading Times - Uses 1 Minute Chart Bars! Use Bar Counter Indicator")]
         public bool US { get; set; }
         [NinjaScriptProperty]
-        [Display(Name = "US Bar Start", Description = "Start Bar for US Session", Order = 3, GroupName = "Trading Times - Change accordingly! Use Bar Counter Indicator")]
+        [Display(Name = "US Bar Start", Description = "Start Bar for US Session", Order = 3, GroupName = "Trading Times - Uses 1 Minute Chart Bars! Use Bar Counter Indicator")]
         public int USBarStart { get; set; } = 936;
         
         [NinjaScriptProperty]
-        [Display(Name = "US Bar End", Description = "End Bar for US Session", Order = 4, GroupName = "Trading Times - Change accordingly! Use Bar Counter Indicator")]
+        [Display(Name = "US Bar End", Description = "End Bar for US Session", Order = 4, GroupName = "Trading Times - Uses 1 Minute Chart Bars! Use Bar Counter Indicator")]
         public int USBarEnd { get; set; } = 1600;
 
         [NinjaScriptProperty]
-        [Display(Name = "Asia", Description = "Check if you want to check/trade this Session", Order = 5, GroupName = "Trading Times - Change accordingly! Use Bar Counter Indicator")]
+        [Display(Name = "Asia", Description = "Check if you want to check/trade this Session", Order = 5, GroupName = "Trading Times - Uses 1 Minute Chart Bars! Use Bar Counter Indicator")]
         public bool Asia { get; set; }
         [NinjaScriptProperty]
-        [Display(Name = "Asia Bar Start", Description = "Start Bar for Asia Session", Order = 6, GroupName = "Trading Times - Change accordingly! Use Bar Counter Indicator")]
+        [Display(Name = "Asia Bar Start", Description = "Start Bar for Asia Session", Order = 6, GroupName = "Trading Times - Uses 1 Minute Chart Bars! Use Bar Counter Indicator")]
         public int AsiaBarStart { get; set; } = 0;
         [NinjaScriptProperty]
-        [Display(Name = "Asia Bar End", Description = "End Bar for Asia Session", Order = 7, GroupName = "Trading Times - Change accordingly! Use Bar Counter Indicator")]
+        [Display(Name = "Asia Bar End", Description = "End Bar for Asia Session", Order = 7, GroupName = "Trading Times - Uses 1 Minute Chart Bars! Use Bar Counter Indicator")]
         public int AsiaBarEnd { get; set; } = 300;
         [NinjaScriptProperty]
-        [Display(Name = "London", Description = "Check if you want to check/trade this Session", Order = 8, GroupName = "Trading Times - Change accordingly! Use Bar Counter Indicator")]
+        [Display(Name = "London", Description = "Check if you want to check/trade this Session", Order = 8, GroupName = "Trading Times - Uses 1 Minute Chart Bars! Use Bar Counter Indicator")]
         public bool London { get; set; }
         [NinjaScriptProperty]
-        [Display(Name = "London Bar Start", Description = "Start Bar for London Session", Order = 9, GroupName = "Trading Times - Change accordingly! Use Bar Counter Indicator")]
+        [Display(Name = "London Bar Start", Description = "Start Bar for London Session", Order = 9, GroupName = "Trading Times - Uses 1 Minute Chart Bars! Use Bar Counter Indicator")]
         public int LondonBarStart { get; set; } = 480;
         [NinjaScriptProperty]   
-        [Display(Name = "London Bar End", Description = "End Bar for London Session", Order = 10, GroupName = "Trading Times - Change accordingly! Use Bar Counter Indicator")]
+        [Display(Name = "London Bar End", Description = "End Bar for London Session", Order = 10, GroupName = "Trading Times - Uses 1 Minute Chart Bars! Use Bar Counter Indicator")]
         public int LondonBarEnd { get; set; } = 960;
         [NinjaScriptProperty]
-        [Display(Name = "Frankfurt", Description = "Check if you want to check/trade this Session", Order = 11, GroupName = "Trading Times - Change accordingly! Use Bar Counter Indicator")]
+        [Display(Name = "Frankfurt", Description = "Check if you want to check/trade this Session", Order = 11, GroupName = "Trading Times - Uses 1 Minute Chart Bars! Use Bar Counter Indicator")]
         public bool Frankfurt { get; set; }
         [NinjaScriptProperty]
-        [Display(Name = "Frankfurt Bar Start", Description = "Start Bar for Frankfurt Session", Order = 12, GroupName = "Trading Times - Change accordingly! Use Bar Counter Indicator")]
+        [Display(Name = "Frankfurt Bar Start", Description = "Start Bar for Frankfurt Session", Order = 12, GroupName = "Trading Times - Uses 1 Minute Chart Bars! Use Bar Counter Indicator")]
         public int FrankfurtBarStart { get; set; } = 540;
         [NinjaScriptProperty]
-        [Display(Name = "Frankfurt Bar End", Description = "End Bar for Frankfurt Session", Order = 13, GroupName = "Trading Times - Change accordingly! Use Bar Counter Indicator")]
+        [Display(Name = "Frankfurt Bar End", Description = "End Bar for Frankfurt Session", Order = 13, GroupName = "Trading Times - Uses 1 Minute Chart Bars! Use Bar Counter Indicator")]
         public int FrankfurtBarEnd { get; set; } = 1020;
        
 
         [NinjaScriptProperty]
-        [Display(Name = "Custom", Description = "Check if you want to check/trade this Session", Order = 14, GroupName = "Trading Times - Change accordingly! Use Bar Counter Indicator")]
+        [Display(Name = "Custom", Description = "Check if you want to check/trade this Session", Order = 14, GroupName = "Trading Times - Uses 1 Minute Chart Bars! Use Bar Counter Indicator")]
         public bool Custom { get; set; } = true;
         [NinjaScriptProperty]
-        [Display(Name = "Custom Bar Start", Description = "Start Bar for Custom Session", Order = 15, GroupName = "Trading Times - Change accordingly! Use Bar Counter Indicator")]
+        [Display(Name = "Custom Bar Start", Description = "Start Bar for Custom Session", Order = 15, GroupName = "Trading Times - Uses 1 Minute Chart Bars! Use Bar Counter Indicator")]
         public int CustomBarStart { get; set; } = 1;
         [NinjaScriptProperty]
-        [Display(Name = "Custom Bar End", Description = "End Bar for Custom Session", Order = 16, GroupName = "Trading Times - Change accordingly! Use Bar Counter Indicator")]
+        [Display(Name = "Custom Bar End", Description = "End Bar for Custom Session", Order = 16, GroupName = "Trading Times - Uses 1 Minute Chart Bars! Use Bar Counter Indicator")]
         public int CustomBarEnd { get; set; } = 5000;
         
 
