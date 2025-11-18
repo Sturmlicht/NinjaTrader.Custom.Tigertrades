@@ -222,6 +222,8 @@ namespace NinjaTrader.NinjaScript.Indicators
                     GapHigh = Math.Min(Math.Max(Highs[1][1], Lows[1][0]) , Math.Max(Highs[1][0], Lows[1][1]));
                     GapLow = Math.Max(Math.Min(Lows[1][0], Highs[1][1]) , Math.Min(Lows[1][1], Highs[1][0]));
 
+
+
                     Draw.Rectangle(this, $"Gap {barDate}", 0, GapLow, -1320, GapHigh, GapColor);
                     GapUpper[0] = GapHigh;
                     GapLower[0] = GapLow;
@@ -229,6 +231,11 @@ namespace NinjaTrader.NinjaScript.Indicators
 
                 }
                 
+            }
+            if (GapHigh == 0.0)
+            {
+                GapHigh= Open[0];
+                GapLow= Close[1];
             }
 
 
@@ -261,15 +268,15 @@ namespace NinjaTrader.NinjaScript.Indicators
                 Upper[0] = anchorHigh;
                 Lower[0] = anchorLow;
 
-                if (PlotTheGap)
-                {
-                    GapUpper[0] = GapHigh;
-                    GapLower[0] = GapLow;
-                }
+            }
+
+            if (PlotTheGap)
+            {
+                GapUpper[0] = GapHigh;
+                GapLower[0] = GapLow;
             }
 
 
-           
         }
         private void CalculateOpeningHighLow()
         {
@@ -341,7 +348,7 @@ namespace NinjaTrader.NinjaScript.Indicators
         public Brush HighlightColor { get; set; } = Brushes.Transparent;
 
         [NinjaScriptProperty]
-        [Display(Name = "Region Highlight Color", Order = 6, GroupName = "3 - Visuals")]
+        [Display(Name = "Region Highlight Area Color", Order = 6, GroupName = "3 - Visuals")]
         public Brush HighlightAreaColor { get; set; } = Brushes.SteelBlue;
 
 
