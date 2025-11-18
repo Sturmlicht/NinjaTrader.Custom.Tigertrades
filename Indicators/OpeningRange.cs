@@ -12,8 +12,9 @@ using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Security.Cryptography.X509Certificates;
 using System.Windows.Media;
+using System.Xml.Serialization;
 
-    
+
 
 #endregion
 
@@ -111,83 +112,60 @@ namespace NinjaTrader.NinjaScript.Indicators
             //Print(barDate.Day);
             //Print(BarNumberLondon);
 
-
-            //London in Winter
-            if ((London && BarNumberLondon != 479) || (Frankfurt && BarNumberFrankfurt !=419)
-
-                && CheckedBar!=CurrentBar &&
-                (CheckedMonth != barDate.Month || CheckedDay != barDate.Day))
+            if (CheckedDay != barDate.Day)
             {
+                if (DayAfterDST && CheckedDay != barDate.Day)
+                { DayAfterDST = false; }
+
                 CheckedBar=CurrentBar;
                 CheckedMonth=barDate.Month;
                 CheckedDay=barDate.Day;
-                //Print(currentDay);
+                //Print(CheckedMonth);
                 //Print(barDate);
                 //Print(BarNumberLondon);
 
-                if ((currentDay == Monday && barDate.Month == 10 && barDate.Day >= 26) //the switch happened on the previous Sunday so we should switch
-                ||
-                (currentDay == Tuesday && barDate.Month == 10 && barDate.Day >= 27)
-                ||
-                (currentDay == Wednesday && barDate.Month == 10 && barDate.Day >= 28)
-                ||
-                (currentDay == Thursday && barDate.Month == 10 && barDate.Day >= 29)
-                ||
-                (currentDay == Friday && barDate.Month == 10 && barDate.Day >= 30)
-                ||
-                (barDate.Month >= 11 && barDate.Month <= 2) //November to February are Definitly Wintertime
-                ||
-                (currentDay == Friday && barDate.Month == 3 && barDate.Day <= 28) //Switch should happen at the following weekend to summer
-                ||
-                (currentDay == Thursday && barDate.Month == 3 && barDate.Day <= 27)
-                ||
-                (currentDay == Wednesday && barDate.Month == 3 && barDate.Day <= 26)
-                ||
-                (currentDay == Tuesday && barDate.Month == 3 && barDate.Day <= 25)
-                ||
-                (currentDay == Monday && barDate.Month == 3 && barDate.Day <= 25)
-                )
+                //Winter
+                if (
+                    ((London && BarNumberLondon != 479) || (Frankfurt && BarNumberFrankfurt !=419))
+                    &&
+                    (
+                    (currentDay == Monday && barDate.Month == 10 && barDate.Day >= 26) //the switch happened on the previous Sunday so we should switch
+                    || (currentDay == Tuesday && barDate.Month == 10 && barDate.Day >= 27)
+                    || (currentDay == Wednesday && barDate.Month == 10 && barDate.Day >= 28)
+                    || (currentDay == Thursday && barDate.Month == 10 && barDate.Day >= 29)
+                    || (currentDay == Friday && barDate.Month == 10 && barDate.Day >= 30)
+                    || (barDate.Month >= 11 && barDate.Month <= 2) //November to February are Definitly Wintertime
+                    || (currentDay == Friday && barDate.Month == 3 && barDate.Day <= 28) //Switch should happen at the following weekend to summer
+                    || (currentDay == Thursday && barDate.Month == 3 && barDate.Day <= 27)
+                    || (currentDay == Wednesday && barDate.Month == 3 && barDate.Day <= 26)
+                    || (currentDay == Tuesday && barDate.Month == 3 && barDate.Day <= 25)
+                    || (currentDay == Monday && barDate.Month == 3 && barDate.Day <= 25)
+                    ))
                 {
-                    BarNumberLondon = 479; //switching to Wintertime
-                    BarNumberFrankfurt =419;
-                    Print($"Switched to Wintertime for London Frankfurt {barDate}, {currentDay}");
-                    DayAfterDST = true;
+                        BarNumberLondon = 479; //switching to Wintertime
+                        BarNumberFrankfurt =419;
+                        Print($"Switched to Wintertime for London Frankfurt {barDate}, {currentDay}");
+                        DayAfterDST = true;
 
                 }
-            }
-            if ((London && BarNumberLondon != 540) || (Frankfurt && BarNumberFrankfurt !=480)
-                && CheckedBar!=CurrentBar &&
-                (CheckedMonth != barDate.Month || CheckedDay != barDate.Day))
-            {
-                CheckedBar=CurrentBar;
-                CheckedMonth=barDate.Month;
-                CheckedDay=barDate.Day;
-                //Print(currentDay);
-                //Print(barDate);
-                //Print(BarNumberLondon);
-
-                if ((currentDay == Monday && barDate.Month == 3 && barDate.Day >= 26) //the switch happened on the previous Sunday so we should switch
-                ||
-                (currentDay == Tuesday && barDate.Month == 3 && barDate.Day >= 27)
-                ||
-                (currentDay == Wednesday && barDate.Month == 3 && barDate.Day >= 28)
-                ||
-                (currentDay == Thursday && barDate.Month == 3 && barDate.Day >= 29)
-                ||
-                (currentDay == Friday && barDate.Month == 3 && barDate.Day >= 30)
-                ||
-                (barDate.Month >= 4 && barDate.Month <= 9) //November to February are Definitly Wintertime
-                ||
-                (currentDay == Friday && barDate.Month == 10 && barDate.Day <= 28) //Switch should happen at the following weekend to summer
-                ||
-                (currentDay == Thursday && barDate.Month == 10 && barDate.Day <= 27)
-                ||
-                (currentDay == Wednesday && barDate.Month == 10 && barDate.Day <= 26)
-                ||
-                (currentDay == Tuesday && barDate.Month == 10 && barDate.Day <= 25)
-                ||
-                (currentDay == Monday && barDate.Month == 10 && barDate.Day <= 25)
-                )
+                
+                    //Summer
+                if (
+                    ((London && BarNumberLondon != 539) || (Frankfurt && BarNumberFrankfurt !=479))
+                    && 
+                    (
+                    (currentDay == Monday && barDate.Month == 3 && barDate.Day >= 26) //the switch happened on the previous Sunday so we should switch
+                    || (currentDay == Tuesday && barDate.Month == 3 && barDate.Day >= 27)
+                    || (currentDay == Wednesday && barDate.Month == 3 && barDate.Day >= 28)
+                    || (currentDay == Thursday && barDate.Month == 3 && barDate.Day >= 29)
+                    || (currentDay == Friday && barDate.Month == 3 && barDate.Day >= 30)
+                    || (barDate.Month >= 4 && barDate.Month <= 9) //November to February are Definitly Wintertime
+                    || (currentDay == Friday && barDate.Month == 10 && barDate.Day <= 28) //Switch should happen at the following weekend to summer
+                    || (currentDay == Thursday && barDate.Month == 10 && barDate.Day <= 27)
+                    || (currentDay == Wednesday && barDate.Month == 10 && barDate.Day <= 26)
+                    || (currentDay == Tuesday && barDate.Month == 10 && barDate.Day <= 25)
+                    || (currentDay == Monday && barDate.Month == 10 && barDate.Day <= 25)
+                    ))
                 {
                     BarNumberLondon = 539; //switching to Summertime
                     BarNumberFrankfurt = 479;
@@ -197,10 +175,9 @@ namespace NinjaTrader.NinjaScript.Indicators
 
                 }
 
-                if (DayAfterDST && CheckedDay != barDate.Day)
-                { DayAfterDST = false; }
-            }
 
+                
+            }
             #endregion
 
             #region Highlight
@@ -246,8 +223,8 @@ namespace NinjaTrader.NinjaScript.Indicators
                     GapLow = Math.Max(Math.Min(Lows[1][0], Highs[1][1]) , Math.Min(Lows[1][1], Highs[1][0]));
 
                     Draw.Rectangle(this, $"Gap {barDate}", 0, GapLow, -1320, GapHigh, GapColor);
-                    Values[2][0] = GapHigh;
-                    Values[3][0] = GapLow;
+                    GapUpper[0] = GapHigh;
+                    GapLower[0] = GapLow;
 
 
                 }
@@ -281,13 +258,13 @@ namespace NinjaTrader.NinjaScript.Indicators
             // Plot the anchored values until session end
             if (CurrentBars[1] >= anchorBar-1 && CurrentBars[1]<= anchorBar + HowLongToPlot )
             {
-                Values[0][0] = anchorHigh;
-                Values[1][0] = anchorLow;
+                Upper[0] = anchorHigh;
+                Lower[0] = anchorLow;
 
                 if (PlotTheGap)
                 {
-                    Values[2][0] = GapHigh;
-                    Values[3][0] = GapLow;
+                    GapUpper[0] = GapHigh;
+                    GapLower[0] = GapLow;
                 }
             }
 
@@ -321,8 +298,21 @@ namespace NinjaTrader.NinjaScript.Indicators
         }
 
         #region Properties
+        [Browsable(false)]
+        [XmlIgnore]
+        public Series<double> Lower => Values[1];
 
+        [Browsable(false)]
+        [XmlIgnore]
+        public Series<double> Upper => Values[0];
 
+        [Browsable(false)]
+        [XmlIgnore]
+        public Series<double> GapUpper => Values[2];
+
+        [Browsable(false)]
+        [XmlIgnore]
+        public Series<double> GapLower => Values[3];
 
         [NinjaScriptProperty]
         [Range(1, int.MaxValue)]
