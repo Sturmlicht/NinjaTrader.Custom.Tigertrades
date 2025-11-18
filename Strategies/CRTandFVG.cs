@@ -12,6 +12,8 @@ using NinjaTrader.NinjaScript.DrawingTools;
 using NinjaTrader.NinjaScript.Indicators;
 using NinjaTrader.NinjaScript.Indicators.j2;
 using NinjaTrader.NinjaScript.OptimizationFitnesses;
+using NinjaTrader.NinjaScript.Strategies;
+using NinjaTrader.NinjaScript.SuperDomColumns;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -71,6 +73,10 @@ namespace NinjaTrader.NinjaScript.Strategies
         int EntryCriteriaFoundShort = 0;
         int FirstCriteriaFoundShort = 0;
         private double ValueToReach;
+
+        int FullRisk;
+        int HalfRisk;
+        int MoneyToRisk;
 
         protected override void OnStateChange()
 		{
@@ -135,7 +141,13 @@ namespace NinjaTrader.NinjaScript.Strategies
                 TextPosition.BottomRight, TextColor, new Gui.Tools.SimpleFont { Size = 14 },
                                     Brushes.Transparent, Brushes.Transparent, 0);
 
-            
+            if (FullRisk == 0) //so we only do it once
+            {
+                FullRisk = MaxMoneyDefined;
+                HalfRisk = (MaxMoneyDefined/2);
+                MoneyToRisk = FullRisk;
+
+            }
 
 
             //Check for Correct Time for Trading Days and Bars
@@ -171,6 +183,7 @@ namespace NinjaTrader.NinjaScript.Strategies
                 criteriaFoundShort = false;
                 EntrySignalLong = false;
                 EntrySignalShort = false;
+                MoneyToRisk = FullRisk;
             }
 
 
@@ -203,7 +216,7 @@ namespace NinjaTrader.NinjaScript.Strategies
 
 
             if (TradingTime
-                && criteriaFoundLong && (ConfirmingCandleNotImmediate || CurrentBar == CriteriaFoundCandle+1) //let's check for the Confirming Candle
+                && criteriaFoundLong && ((ConfirmingCandleNotImmediate && CurrentBar <= CriteriaFoundCandle + ConfirmingCandleRange) || CurrentBar == CriteriaFoundCandle+1) //let's check for the Confirming Candle
                 && Close[0] > Open[0] // is bullish
                 && ( Close[0] < ValueToReach  // Closes within range of the bearish candle
                 || ( ConfirmingCandleCanCloseAnywhere && Close[0] > ValueToReach) // or above its open
@@ -213,8 +226,13 @@ namespace NinjaTrader.NinjaScript.Strategies
 
 
                 )
-            { BarBrushes[0] = BarColor2; // let's mark it in a different color
+            { 
                 
+                BarBrushes[0] = BarColor2; // let's mark it in a different color
+
+                if (CurrentBar != CriteriaFoundCandle+1 && LowerRiskOnNotImmediateCandleConfirmation)
+                { MoneyToRisk = HalfRisk; }
+
                 criteriaFoundLong = false;
 
                 // Marking the Entry and the SL
@@ -231,19 +249,20 @@ namespace NinjaTrader.NinjaScript.Strategies
 
                 // Calculating Quantity based on Risk
                 patternRiskCurrency = Risk * Instrument.MasterInstrument.PointValue;
-                int calculatedQuantity = (int)Math.Floor(RiskMaxMoney / patternRiskCurrency);
+                int calculatedQuantity = (int)Math.Floor(MoneyToRisk / patternRiskCurrency);
                 Quantity = Math.Max(calculatedQuantity, 1); // Ensure at least 1 contract                                
                 Draw.Text(this, $"Entry_{CurrentBar}", $"Quantity set: {Quantity} from Risk {patternRiskCurrency}", 0, Low[0] - 15 * TickSize, TextColor);
 
                 EntrySignalLong = true; Draw.Text(this, $"Entry_{CurrentBar}", "Go Long", 0, Low[0] + 10 * TickSize, TextColor);
                 EntryCriteriaFoundLong += 1;
+                MoneyToRisk = FullRisk; //resetting the Risk 
             }
 
             //TRADING HERE!
             if ( EntrySignalLong  
                 && !UseAsIndicatorOnly //if this is false, we will enter Trades!
                 && Position.MarketPosition == MarketPosition.Flat
-                && (patternRiskCurrency < RiskMaxMoney || !NoTradeIfRiskTooHigh)
+                && (patternRiskCurrency < MoneyToRisk || !NoTradeIfRiskTooHigh)
                 )
             {
                 EntrySignalLong = false;
@@ -291,7 +310,7 @@ namespace NinjaTrader.NinjaScript.Strategies
 
 
             if (TradingTime
-                && criteriaFoundShort && (ConfirmingCandleNotImmediate || CurrentBar == CriteriaFoundCandle+1) //let's check for the Confirming Candle
+                && criteriaFoundShort && ((ConfirmingCandleNotImmediate && CurrentBar <= CriteriaFoundCandle + ConfirmingCandleRange) || CurrentBar == CriteriaFoundCandle+1) //let's check for the Confirming Candle
                 && Close[0] < Open[0] // is bearish
                 && (Close[0] > ValueToReach // Closes within range of the bullish candle
                 || (ConfirmingCandleCanCloseAnywhere && Close[0] < ValueToReach) //or  below its open
@@ -301,6 +320,9 @@ namespace NinjaTrader.NinjaScript.Strategies
 
                 )
             {
+                if (CurrentBar != CriteriaFoundCandle+1 && LowerRiskOnNotImmediateCandleConfirmation)
+                { MoneyToRisk = HalfRisk; }
+
                 BarBrushes[0] = BarColor2; // let's mark it in a different color
                 criteriaFoundShort = false;
 
@@ -319,19 +341,20 @@ namespace NinjaTrader.NinjaScript.Strategies
                 patternRiskCurrency = Risk * Instrument.MasterInstrument.PointValue;
 
                  
-                int calculatedQuantity = (int)Math.Floor(RiskMaxMoney / patternRiskCurrency);
+                int calculatedQuantity = (int)Math.Floor(MoneyToRisk / patternRiskCurrency);
                 Quantity = Math.Max( Math.Min(calculatedQuantity, MaxQuantity), 1); // Ensure Maximum Quantity and at least 1 contract                                
                 Draw.Text(this, $"Entry_{CurrentBar}", $"Quantity set: {Quantity} from Risk {patternRiskCurrency}", 0, High[0] + 15 * TickSize, TextColor);
 
                 EntrySignalShort = true; Draw.Text(this, $"Entry_{CurrentBar}", "Go Short", 0, High[0] + 10 * TickSize, TextColor);
                 EntryCriteriaFoundShort += 1;
+                MoneyToRisk = FullRisk; //resetting the Risk 
             }
 
             //TRADING HERE!
             if (EntrySignalShort
                 && !UseAsIndicatorOnly //if this is false, we will enter Trades!
                 && Position.MarketPosition == MarketPosition.Flat
-                && (patternRiskCurrency < RiskMaxMoney || !NoTradeIfRiskTooHigh)
+                && (patternRiskCurrency < MoneyToRisk || !NoTradeIfRiskTooHigh)
                 )
             {
                 EntrySignalShort = false;
@@ -374,12 +397,21 @@ namespace NinjaTrader.NinjaScript.Strategies
         public bool ConfirmingCandleNotImmediate { get; set; } = false;
 
         [NinjaScriptProperty]
-        [Display(Name = "Confirming Candle Can Close Above/Below Open", Description = "If true, the confirming candle can close above the open of the FVG creating candle.", Order = 5, GroupName = "Criteria Settings - ofc we trust TG Capital but we want to test anyways!")]
+        [Range(1, int.MaxValue)]
+        [Display(Name = "Range of Candles within the Confirming Candle should appear", Description = "If the confirming candle should not be immediate, it will check up to x Candles if the pattern confirms.", Order = 5, GroupName = "Criteria Settings - ofc we trust TG Capital but we want to test anyways!")]
+        public int ConfirmingCandleRange { get; set; } = 5;
+
+        [NinjaScriptProperty]
+        [Display(Name = "Confirming Candle Can Close Above/Below Open", Description = "If true, the confirming candle can close above the open of the FVG creating candle.", Order = 6, GroupName = "Criteria Settings - ofc we trust TG Capital but we want to test anyways!")]
         public bool ConfirmingCandleCanCloseAnywhere { get; set; } = false;
 
         [NinjaScriptProperty]
-        [Display(Name = "Confirming Candle Can Close On The Open", Description = "If true, the confirming candle can close exactly on the open of the FVG creating candle.", Order = 6, GroupName = "Criteria Settings - ofc we trust TG Capital but we want to test anyways!")]
+        [Display(Name = "Confirming Candle Can Close On The Open", Description = "If true, the confirming candle can close exactly on the open of the FVG creating candle.", Order = 7, GroupName = "Criteria Settings - ofc we trust TG Capital but we want to test anyways!")]
         public bool ConfirmingCandleCanCloseOnTheOpen { get; set; } = false;
+
+        [NinjaScriptProperty]
+        [Display(Name = "Lower Risk On Not Immeditae Candle Confirmation", Description = "If true,  we risk only half the money.", Order = 7, GroupName = "Criteria Settings - ofc we trust TG Capital but we want to test anyways!")]
+        public bool LowerRiskOnNotImmediateCandleConfirmation { get; set; } = false;
 
 
 
@@ -526,7 +558,7 @@ namespace NinjaTrader.NinjaScript.Strategies
 
         [NinjaScriptProperty]
         [Display(Name = "Max Money to Risk", Description = "Set how much money you are willing to risk, it will calculate the Quantity for the trade", Order = 2, GroupName = "Attention Actual Trading here if Indicator Only is unchecked!")]
-        public int RiskMaxMoney { get; set; } = 100;
+        public int MaxMoneyDefined { get; set; } = 100;
 
         [NinjaScriptProperty]
         [Range(1, int.MaxValue)]
@@ -823,3 +855,19 @@ namespace NinjaTrader.NinjaScript.Strategies
 </ScriptProperties>
 @*/
 #endregion
+
+
+
+/* Testings
+For Tuesdays / Confirming Candle Not Immediate, 5 Allow Close anywhere / Lower Risk then / Max Risk 150 
+NQ 15 Min good between Entry 3:30 (Bar 230) and 5:30 (Bar 410)  UTC / was only good in 2025! 3 R is enough , 5 R reached though
+GC 15 Min good between 3 - 4:30 and 12 - 13:30 // 180 - 270 und 660-840 / had most winning trades in 2023, none in 2025 yet on tuesdays
+
+  If used as Strategy, put it on bar closed, just in case!
+
+
+
+
+
+ */
+
