@@ -219,10 +219,11 @@ namespace NinjaTrader.NinjaScript.Indicators
                 if (PlotTheGap)
                 {
 
-                    GapHigh = Math.Min(Math.Max(Highs[1][1], Lows[1][0]) , Math.Max(Highs[1][0], Lows[1][1]));
-                    GapLow = Math.Max(Math.Min(Lows[1][0], Highs[1][1]) , Math.Min(Lows[1][1], Highs[1][0]));
+                    //GapHigh = Math.Min(Math.Max(Highs[1][1], Lows[1][0]) , Math.Max(Highs[1][0], Lows[1][1]));
+                    //GapLow = Math.Max(Math.Min(Lows[1][0], Highs[1][1]) , Math.Min(Lows[1][1], Highs[1][0]));
 
-
+                    GapHigh = Close[1];
+                    GapLow = Open[0];
 
                     Draw.Rectangle(this, $"Gap {barDate}", 0, GapLow, -1320, GapHigh, GapColor);
                     GapUpper[0] = GapHigh;
